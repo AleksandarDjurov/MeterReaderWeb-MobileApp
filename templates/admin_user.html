@@ -1,0 +1,243 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <section style="margin-bottom: 30px;margin-top: 30px;">
+        <label style="font-size: 15px; float: right"><input type="checkbox" id="chk_new" style="width: 15px; height: 15px" onchange="showUserTable()"/> New Registered</label>
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme;line-height: 0.6;"><br>Manage User</h2>
+        <div class="table-responsive" style="font-size: 12px;">
+            <table class="table table-bordered" id="user_table">
+                <thead>
+                    <tr>
+                        <th scope="col">UserId</th>
+                        <th scope="col">User Name</th>
+                        <th scope="col">Phone Number</th>
+                        <th scope="col">User Active</th>
+                        <th scope="col">User Access Type</th>
+                        <th scope="col">Change Password</th>
+                        <th scope="col">New Password</th>
+                        <th scope="col">Confirm Password</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div style="text-align: right;padding: 15px;">
+            <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="window.history.back()">Cancel</button>
+            <button class="btn btn-success" type="button" id = "btnSave" style="margin-right: 10px;" onclick="ShowConfirmModal()">Save</button>
+        </div>
+    </section>
+
+    <div class="modal fade" id="confirm_modal" role="dialog" style="text-align: center">
+        <div class="modal-dialog"  style="max-width: 400px;">
+            <div class="modal-content" style="padding: 10px;">
+                <h2 style="text-align: center;font-family: 'Acme';color: rgb(47,89,37);margin-bottom: 20px;">Are you sure?</h2>
+                <h3 style="text-align: center;font-family: 'Acme';color: rgb(47,89,37);margin-bottom: 20px;">User's profile will be changed.</h3>
+                <div style="text-align: right; padding: 15px; margin-right: 10px;">
+                    <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="hideConfirmModal()">Cancel</button>
+                    <button class="btn btn-success" type="button" onclick="onBtnSave()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        var savedRow = [];
+        var userTable;
+        var editRow = 0, user_id = 0;
+        var indexes = 0, pageInfo =0, roleId = 0, active = 0;
+        
+        var intVal = function ( i ) {
+            return typeof i === 'string' ?
+                i.replace(/[\$,]/g, '')*1 :
+                typeof i === 'number' ?
+                    i : 0;
+        };
+
+        function initEditRow() {
+            if( editRow == 0 || editRow == undefined ) {
+                return;
+            }
+
+            $('#new_pwd_'+user_id).css("border","none");
+            $("#new_pwd_"+user_id).prop("readonly", true)
+            $('#confirm_pwd_'+user_id).css("border","none");
+            $("#confirm_pwd_"+user_id).prop("readonly", true)
+            editRow = 0;
+		}
+		
+        $(document).ready(function () {
+            userTable = $('#user_table').DataTable( {
+                pagingType : "first_last_numbers",
+                //processing : true,
+                ajax: {
+                    url :'/admin/user_manage/user_table',
+                    data : function(data){
+                        data.showNew = $("#chk_new").is(':checked');
+                    },
+                    dataSrc: function(json) {
+                        var data = json.data;
+                        savedRow = [];
+                        var i;
+                        for( i = 0; i < data.length; i++ ) {
+                            savedRow.push(false);
+                        }
+                        return data;
+                    }
+                },
+                columns: [
+                    { data: 'id' },             // 1
+                    { data: 'username' },       // 2
+                    { data: 'Phone' },          // 3
+                    { data: 'ChkUserActive' },  // 4
+                    { data: 'SelRoleId' },      // 5
+                    { data: 'ChkPwd' },         // 6
+                    { data: 'NewPwd' },         // 7
+                    { data: 'ConfirmPwd' }      // 8
+                ]
+			});
+			$('.dataTables_length').addClass('bs-select');
+
+            $('input[type="search"]').click( function () {
+                initEditRow();
+            } );
+
+            $(userTable.table().body()).on('click', 'tr', function () {
+                if ("{{ session['enableWrite'] }}" != "True")
+                    return;
+
+                var currRow = $(this).closest("tr").off("mousedown");
+                
+                if ( editRow != currRow ) {
+                    initEditRow();
+                    editRow = currRow;
+                }
+                
+                var $td_new_pwd = editRow.find("td:nth-child(7)"),
+                    $td_confirm_pwd = editRow.find("td:nth-child(8)");
+
+                indexes = userTable.rows( {search:'applied'} ).indexes();
+                pageInfo = userTable.page.info();
+                user_id = editRow.find("td:nth-child(1)").text()
+                roleId = $("#role_" + user_id).val();
+                active = $("#act_" + user_id).is(':checked');
+                    
+                var isChanged = $("#pwd_" + user_id).is(':checked');
+                if( isChanged ) {
+                    $('#new_pwd_'+user_id).css("border","1px solid");
+                    $("#new_pwd_"+user_id).prop("readonly", false)
+                    $('#confirm_pwd_'+user_id).css("border","1px solid");
+                    $("#confirm_pwd_"+user_id).prop("readonly", false)
+                }
+    
+                $("#pwd_"+user_id).change( function() {
+                    var isChanged = $("#pwd_" + user_id).is(':checked');
+                    if( isChanged ) {
+                        $('#new_pwd_'+user_id).css("border","1px solid");
+                        $("#new_pwd_"+user_id).prop("readonly", false)
+                        $('#confirm_pwd_'+user_id).css("border","1px solid");
+                        $("#confirm_pwd_"+user_id).prop("readonly", false)
+                    } else {
+                        $('#new_pwd_'+user_id).css("border","none");
+                        $("#new_pwd_"+user_id).prop("readonly", true)
+                        $('#confirm_pwd_'+user_id).css("border","none");
+                        $("#confirm_pwd_"+user_id).prop("readonly", true)
+                    }
+                    if( $("#confirm_pwd_"+user_id).val() == "" )
+                        return;
+                    pushToTableData();
+                });
+            });
+        });
+
+        function ChangeNewPassword() {
+            $("#confirm_pwd_"+user_id).val("");
+        }
+
+        function ChangeConfirmPassword() {
+            new_pwd = $('#new_pwd_'+user_id).val();
+            confirm_pwd = $("#confirm_pwd_"+user_id).val();
+            if( confirm_pwd == "" )
+                return;
+            if( new_pwd != confirm_pwd ) {
+                alert("invalidate password!")
+                $('#inp_confirm_pwd').val("");
+                return;
+            }
+            pushToTableData();
+        }
+
+        function ChangeUserRole() {
+            roleId = $("#role_" + user_id).val();
+            pushToTableData();
+        };
+
+        function ChangeUserActive() {
+            active = $("#act_" + user_id).is(':checked');
+            pushToTableData();
+        }
+
+        function pushToTableData() {
+            rowIndex = indexes[pageInfo.page*pageInfo.length+editRow.index()];
+            userTable.data(0)[rowIndex].RoleId = roleId;
+            userTable.data(0)[rowIndex].IsUserActive = active;
+            var isChanged = $("#pwd_" + user_id).is(':checked');
+
+            if( isChanged && $("#confirm_pwd_"+user_id).val() != "" ) {
+                userTable.data(0)[rowIndex].ChkPwd = true;
+                userTable.data(0)[rowIndex].NewPwd = $("#confirm_pwd_"+user_id).val();
+                userTable.data(0)[rowIndex].ConfirmPwd = $("#confirm_pwd_"+user_id).val();
+            } else {
+                userTable.data(0)[rowIndex].ChkPwd = false;
+                userTable.data(0)[rowIndex].NewPwd = "";
+                userTable.data(0)[rowIndex].ConfirmPwd = "";
+            }
+            savedRow[rowIndex] = true;
+            userTable.$('td', rowIndex).addClass("alert-info");
+        }
+
+        function showUserTable() {
+            userTable.ajax.reload();
+            userTable.draw();
+		}
+
+        function ShowConfirmModal() {
+            $("#confirm_modal").modal('show');
+        }
+
+        function hideConfirmModal() {
+            $("#confirm_modal").modal('hide');
+        }
+
+        function onBtnSave() {
+            hideConfirmModal();
+            var sendData = [];
+            var tableData = userTable.data(0);
+            for( i = 0; i < tableData.length; i++ ) {
+                if( savedRow[i] ) {
+                    sendData.push(tableData[i]);
+                }
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/admin/user_manage/update_user",
+                // The key needs to match your method's input parameter (case-sensitive).
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data : JSON.stringify({
+                    sendData: sendData
+                }),
+                success: function(data){alert("success");},
+                failure: function(errMsg) {
+                    alert(errMsg);
+                }
+            });
+        }
+    </script> 
+
+{% endblock %}

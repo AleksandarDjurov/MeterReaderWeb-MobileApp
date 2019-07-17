@@ -1,0 +1,296 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="coustmoers-container" style="max-height: 80vh">
+            <section style="margin-bottom: 30px;margin-top: 30px;">
+                <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme, sans-serif;margin-bottom: 30px;">Add Customer</h2>
+                <div class="row">
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.firstname.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.firstname.errors %}
+                                    {{ form.firstname(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.firstname.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.firstname(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.lastname.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.lastname.errors %}
+                                    {{ form.lastname(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.lastname.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.lastname(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.mobile1.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.mobile1.errors %}
+                                    {{ form.mobile1(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.mobile1.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.mobile1(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.mobile2.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.mobile2(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.mobile3.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.mobile3(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.mobile4.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.mobile4(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.district.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.district(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.city.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.city.errors %}
+                                    {{ form.city(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.city.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.city(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.neighbour.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.neighbour.errors %}
+                                    {{ form.neighbour(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.neighbour.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.neighbour(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.house_tax_no.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.house_tax_no.errors %}
+                                    {{ form.house_tax_no(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.house_tax_no.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.house_tax_no(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.customer_type.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.customer_type(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.account_status.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.account_status(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12">
+                        <div style="height: 2px;background: #a1b9bc;margin-top: 20px;margin-bottom: 20px;"></div>
+                    </div>
+                    <div class="col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6 col-md-3"><span class="label">{{form.dhameen_name.label() }}</span></div>
+                            <div class="col-sm-6 col-md-3">
+                                {{ form.dhameen_name(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.dhameen_mobile1.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.dhameen_mobile1(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.dhameen_mobile2.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.dhameen_mobile2(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.deposit.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.deposit(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.comment.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.comment(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.meter_make.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.meter_make(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.meter_model.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.meter_model(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.meter_serial_no.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.meter_serial_no.errors %}
+                                    {{ form.meter_serial_no(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.meter_serial_no.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.meter_serial_no(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.tag_serial_no.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.tag_serial_no.errors %}
+                                    {{ form.tag_serial_no(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.tag_serial_no.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.tag_serial_no(class="form-control form-control-lg") }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.curr_kw.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {{ form.curr_kw(class="form-control form-control-lg") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12 form-group">
+                        <div class="row">
+                            <div class="col-sm-6"><span class="label">{{form.created_user.label() }}</span></div>
+                            <div class="col-sm-6">
+                                {% if form.created_user.errors %}
+                                    {{ form.created_user(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.created_user.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.created_user(class="form-control form-control-lg", readonly=true) }}
+                                {% endif %}                      
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 30px;">
+                    <div class="col-xs-12 text-right" style="padding-right: 15px;">
+                        <button class="btn btn-info" type="submit" style="margin-right: 20px;">
+                            <i class="glyphicon glyphicon-floppy-saved" style="font-size: 20px;"></i>
+                        </button>   
+                        <button class="btn btn-warning" type="button" onclick="window.location.href = '/customer'">
+                            <i class="glyphicon glyphicon-floppy-remove" style="font-size: 20px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </form>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+{% endblock %}

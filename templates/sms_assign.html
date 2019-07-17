@@ -1,0 +1,120 @@
+{% extends "layout.html" %} 
+{% block content %}
+<h2 class="text-center" style="color: rgb(47,89,37);;font-weight: 600;font-family: Acme, sans-serif;margin-bottom: 30px;">
+    Assign EVC payment
+</h2>
+<div class="row">
+    <div class="col-md-12">
+        <section style="margin: 0px;margin-bottom: 30px;">
+            <div class="table-responsive" style="font-size: 14px;">
+                <table class="table table-bordered" id="sms_table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Assign</th>
+                            <th>SmsId</th>
+                            <th>FromNumber</th>
+                            <th>SmsMessage</th>
+                            <th>DateTime</th>
+                            <th>Amount</th>
+                            <th>Phone</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <td class="text-right" colspan="6">Total : </td>
+                            <td class="text-left text-primary" colspan="3">Summary 2</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div style="text-align: right;padding: 15px;">
+                <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="window.location.href = '/sms'">Cancel</button>
+                <button class="btn btn-success" type="button" id = "btnSave" style="margin-right: 10px;" onclick="assignSms()">Save</button>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+<script>
+    function showTable() {
+        $('#sms_table').DataTable({
+            pagingType: "first_last_numbers",
+            ajax: {
+                url: '/sms/Received',
+                dataSrc: 'smsList'
+            },
+            columns: [
+                { data: 'No' }, 
+                { data: 'Assign' }, 
+                { data: 'SmsId' }, 
+                { data: 'SentFromNumber' }, 
+                { data: 'SmsMessage' }, 
+                { data: 'SentDateTime' }, 
+                { data: 'Amount' }, 
+                { data: 'Phone' }, 
+                { data: 'User' }
+            ],
+            "footerCallback": function(row, data, start, end, display) {
+                var api = this.api(),
+                    data;
+
+                // Remove the formatting to get integer data for summation
+                var intVal = function(i) {
+                    return typeof i === 'string' ?
+                        i.replace(/[\$,]/g, '') * 1 :
+                        typeof i === 'number' ?
+                        i : 0;
+                };
+
+                // Total over all pages
+                total = api
+                    .column(6)
+                    .data()
+                    .reduce(function(a, b) {
+                        return parseFloat(intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+
+                // Total over this page
+                pageTotal = api
+                    .column(6, {
+                        page: 'current'
+                    })
+                    .data()
+                    .reduce(function(a, b) {
+                        return parseFloat(intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+
+                // Update footer
+                $(api.column(5).footer()).html(
+                    '$' + pageTotal + ' ( $' + total + ' total)'
+                );
+            }
+        });
+
+        $('.dataTables_length').addClass('bs-select');
+    }
+
+    function showSentTable() {
+        if ($('#sent_type').val() == "1") {
+            $('#sent_table').show();
+            $('#bank_table').hide();
+        } else {
+            $('#sent_table').hide();
+            $('#bank_table').show();
+        }
+    }
+
+    $(document).ready(function() {
+        showTable();
+    });
+</script>
+
+{% endblock %}

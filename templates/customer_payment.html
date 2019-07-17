@@ -1,0 +1,352 @@
+{% extends "layout.html" %}
+{% block content %}
+    <section style="margin-top: 10px;">
+        <div class="row">
+            <div style="text-align: right;">
+                <div style="width: 120px; margin-right: 20px; display: inline-block;">
+                    {{ form.district(class="form-control", **{"onchange":"showPaymentTable()"}) }}
+                </div>
+                <div style="width: 120px; margin-right: 20px; display: inline-block;">
+                    {{ form.months(class="form-control", **{"onchange":"showPaymentTable()"}) }}
+                </div>
+                <!--
+                <div class="input-group date"  style="width: 170px;float: right;" data-date-format="MMM-YYYY" id="dp">
+                    <input  type="text" data-date-format="MMM-YYYY" class="form-control" placeholder="MMM-YYYY" id="myMonth">
+                    <div class="input-group-addon" >
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div> 
+                -->           
+            </div>
+        </div>
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme;line-height: 0.6;"><br>Manually insert Payments</h2>
+        <div class="table-responsive" style="font-size: 10px;">
+            <table class="table table-bordered" id="payment_table">
+                <thead>
+                    <tr>
+                        <th style="padding: 5px 9px;">Supply No</th>
+                        <th style="padding: 5px 9px;">Usage Id</th>
+                        <th style="padding: 5px 9px;">Barcode No</th>
+                        <th style="padding: 5px 9px;">Read Date</th>
+                        <th style="padding: 5px 9px;">Prev Read</th>
+                        <th style="padding: 5px 9px;">Curr Read</th>
+                        <th style="padding: 5px 9px;">UsedKw</th>
+                        <th style="padding: 5px 9px;">Bill</th>
+                        <th style="padding: 5px 9px;">Payment Type</th>
+                        <th style="padding: 5px 9px;">Paid</th>
+                        <th style="padding: 5px 9px;">Discounted</th>
+                        <th style="padding: 5px 9px;">UnitRate</th>
+                        <th style="padding: 5px 9px;">Discount</th>
+                        <th style="padding: 5px 9px;">Outstanding</th>
+                        <th style="padding: 5px 9px;">User</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div style="text-align: right;padding: 15px;">
+        <div style="text-align: right;padding: 15px;">
+            <div style="text-align:left; display: inline-block; float: left;">
+                <span style="float:left;font-size: 16px;color: rgb(47,89,37); font-family: Acme;">The customers shown in this page are the meters that have not been paid for the current Billing Month.</span>
+            </div>
+            <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="window.location.href = '/customer/usage'">Cancel</button>
+            <button class="btn btn-success" type="button" id = "btnSave" style="margin-right: 10px;" onclick="getNewPaid()">Save</button>
+        </div>
+        
+        <div class="modal fade" id="confirmModal" role="dialog" style="text-align: center">
+            <div class="modal-dialog"  style="max-width: 400px;">
+                <div class="modal-content" style="padding: 10px;">
+                    <h2 style="text-align: center;font-family: 'Acme';color: rgb(47,89,37);margin-bottom: 20px;">Are you sure?</h2>
+                    <h5 style="text-align: center; margin-bottom: 20px;" id="msg_content">3000 reads will be save.</h5>
+                    <div style="text-align: center; padding: 5px;">
+                        <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="hideConfirmModal()">Cancel</button>
+                        <button class="btn btn-success" type="button" onclick="sendNewPaid()">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        var savedRow = [], newSavedRow = [];
+        var paymentTable;
+		var editRow = 0;
+        var intVal = function ( i ) {
+            return typeof i === 'string' ?
+                i.replace(/[\$,]/g, '')*1 :
+                typeof i === 'number' ?
+                    i : 0;
+        };
+
+        function initEditRow(editRow) {
+            if( editRow == 0 || editRow == undefined ) {
+                return;
+            }
+
+            var $input_td_paid = editRow.find("td:nth-child(10)"),
+                $discount_s = editRow.find("td:nth-child(13)");
+
+            var paid = $('#inp_paid').val();
+            $input_td_paid.html(paid);
+
+            discount_s = $('#inp_disc_s').val();
+            $discount_s.html(discount_s);
+		}
+		
+        $(document).ready(function () {
+            paymentTable = $('#payment_table').DataTable( {
+                pagingType : "first_last_numbers",
+                ordering : false,
+                ajax : {
+                    url :'/customer/manual_payment/table',
+                    data : function(data){
+                        // Read values
+                        var district = $("#district").val();
+                        //var month = $("#myMonth").val();
+                        var month = $("#months").val();
+
+                        // Append to data
+                        data.district = district;
+                        data.month = month;
+                    },
+                    dataSrc: function(json) {
+                        var data = json.data;
+                        savedRow = [];
+                        var i;
+                        for( i = 0; i < data.length; i++ ) {
+                            savedRow.push(false);
+                        }
+                        return data;
+                    }
+                },
+                columns: [
+                    { data: 'SupplyNo' },     // 01
+                    { data: 'UsageId' },      // 02
+                    { data: 'Barcode' },      // 03
+                    { data: 'ReadDate' },     // 04
+                    { data: 'PrevRead' },     // 05
+                    { data: 'CurrRead' },     // 06
+                    { data: 'UsedKw' },       // 07           
+                    { data: 'Bill' },         // 08           
+                    { data: 'ChkPaymentType' },  // 09                   
+                    { data: 'Paid' },         // 10     
+                    { data: 'ChkDiscounted' },// 11               
+                    { data: 'UnitRate' },     // 12               
+                    { data: 'Discount' },     // 13      
+                    { data: 'Outstanding' },  // 14              
+                    { data: 'Biller' }        // 15    
+                ]
+			});
+
+            $('.dataTables_length').addClass('bs-select');
+            
+            $('input[type="search"]').click( function () {
+                initEditRow(editRow);
+                editRow = 0;
+            } );
+
+            $(paymentTable.table().body()).on('click', 'tr', function () {
+                if ("{{ session['enableWrite'] }}" != "True")
+                    return;
+
+                var inputs = $(this).find('input');
+				if(inputs.length > 1)
+                    return;
+
+				if (editRow != 0)
+					initEditRow(editRow);
+
+				editRow = $(this).closest("tr").off("mousedown");
+				var $paid = editRow.find("td:nth-child(10)"),
+					$unit_rate = editRow.find("td:nth-child(12)"),
+					$discount_s = editRow.find("td:nth-child(13)"),
+					$outstanding = editRow.find("td:nth-child(14)"),
+                    paid = "", unit_rate = "", discount_s = "";
+                var discounted = $("#b_" + editRow.find("td:nth-child(3)").text()).is(':checked');
+                var indexes = paymentTable.rows( {search:'applied'} ).indexes(),
+                    pageInfo = paymentTable.page.info(),
+                    outstanding = paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Outstanding;
+                if( outstanding == 0 ) {
+                    var bill = editRow.find("td:nth-child(8)").text();
+                    outstanding = bill;
+                }
+
+                paid = $paid.text();
+				unit_rate = $unit_rate.text();
+                discount_s = $discount_s.text();
+				$paid.html("").append('<input id="inp_paid" class="vinp" type="text" value="'+paid+'" style="width:40px; text-align:center; background: none">');
+                $discount_s.html("").append('<input id="inp_disc_s" class="vinp" type="text" value="'+discount_s+'" style="width:40px; text-align:center; background: none">');
+
+                if( !discounted ) {
+                    $('#inp_disc_s').css("border","none");
+                    $("#inp_disc_s").prop("readonly", true)
+                }
+
+                $("#b_" + editRow.find("td:nth-child(3)").text()).change( function() {
+                    var barcode = editRow.find("td:nth-child(3)").text();
+                    discounted = $("#b_" + barcode).is(':checked');
+                    if( discounted ) {
+                        $('#inp_disc_s').css("border","1px solid");
+                        $("#inp_disc_s").prop("readonly", false)
+                    } else {
+                        $('#inp_disc_s').css("border","none");
+                        $("#inp_disc_s").prop("readonly", true);
+                    }
+                    //autoCalcPayment();
+                    pushToTableData();
+                });
+
+                function autoCalcPayment() {
+                    paid = $('#inp_paid').val();
+                    if( discounted ) {
+                        unit_rate = (intVal(paid)/intVal(outstanding)).toFixed(2);
+                        discount_s = (intVal(outstanding)-intVal(paid)).toFixed(2);
+
+                        $unit_rate.text(unit_rate);
+                        $('#inp_disc_s').val(discount_s);
+                    }
+                }
+
+				$('#inp_paid').change(function(){
+                    //autoCalcPayment();
+                    pushToTableData();
+				});
+
+                $('#inp_disc_s').change(function(){
+                    paid = $('#inp_paid').val();
+                    discount_s = $('#inp_disc_s').val();
+                    unit_rate = ( ( intVal(outstanding) - intVal(discount_s) ) / intVal(outstanding) ).toFixed(2);
+                    $unit_rate.text(unit_rate);
+                    
+                    pushToTableData();
+                });
+
+                function pushToTableData() {
+                    discounted = $("#b_" + editRow.find("td:nth-child(3)").text()).is(':checked');
+				    unit_rate = $unit_rate.text();;
+                    var paymentType = $("#pt_" + editRow.find("td:nth-child(3)").text()).val();
+                    paid = $('#inp_paid').val();
+                    if ( intVal(paid) <= 0 ) {
+                        if( paid != "" ) 
+                            alert("Paid cannot be less than 0");
+                        removeEditRowData();
+                        return;
+                    }
+
+                    discount_s = 0;
+                    if( discounted ) {
+                        discount_s = $('#inp_disc_s').val();
+                        if( discount_s == null || discount_s == "" ) {
+                            discount_s = 0;
+                            unit_rate = 1;
+                        }
+                    } else { 
+                        removeEditRowDiscountData();
+                        unit_rate = 1.0;
+                    }
+
+                    resultVal = (intVal(outstanding) - intVal(discount_s) - intVal(paid)).toFixed(2);
+                    $outstanding.text(resultVal);
+                    if ( intVal(resultVal) < 0 ) {
+                        alert("OutstandingBalance cannot be less than 0");
+                        removeEditRowData();
+                        return;
+                    }
+                    
+                    paymentTable.$('td', indexes[pageInfo.page*pageInfo.length+editRow.index()]).addClass("alert-info");
+
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Paid = paid;
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].UnitRate = unit_rate;
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Discounted = discounted;
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Discount = discount_s;
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].PaymentType = paymentType;
+                };
+
+                function removeEditRowData() {
+                    $('#inp_paid').val("");
+                    $outstanding.text(outstanding);
+                    paymentTable.$('td', indexes[pageInfo.page*pageInfo.length+editRow.index()]).removeClass("alert-info");
+                    
+                    removeEditRowDiscountData();
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Paid = "";
+                }
+
+                function removeEditRowDiscountData() {
+                    $('#inp_disc_s').val("");
+                    $unit_rate.text("");
+
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].UnitRate = "";
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Discounted = false;
+                    paymentTable.data(0)[indexes[pageInfo.page*pageInfo.length+editRow.index()]].Discount = "";
+                }
+            } );
+        });
+
+		function showPaymentTable() {
+            paymentTable.ajax.reload();
+            paymentTable.draw();
+		}
+
+        var sendData;
+        function getNewPaid() {
+            sendData = new Array();
+            newSavedRow = [];
+            var tableData = paymentTable.data(0);
+            var i;
+
+            for( i = 0; i < tableData.length; i++ ) {
+                newSavedRow[i] = false;
+                if( savedRow[i] ) {
+                    newSavedRow[i] = true;
+                } else if( intVal(tableData[i].Paid) > 0 ) {
+                    newSavedRow[i] = true;
+                    tableData[i].Outstanding = paymentTable.$('td', i)[13].innerText;
+                    sendData.push(tableData[i]);
+                }
+            }
+
+            if( sendData.length < 1 ) {
+                return;
+            } else {
+                showConfirmModal();
+            }
+        }
+
+        function sendNewPaid() {
+            savedRow = newSavedRow;
+            hideConfirmModal();
+            $.ajax({
+                type: "POST",
+                url: "/customer/payment/save_paid",
+                // The key needs to match your method's input parameter (case-sensitive).
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data : JSON.stringify({
+                    sendData: sendData
+                }),
+                success: function(data){alert("success");},
+                failure: function(errMsg) {
+                    alert(errMsg);
+                }
+            });
+        }
+
+        function showConfirmModal() {
+            $("#btnSave").attr("disabled", true);
+            
+            $("#msg_content").text( sendData.length + " Rows will be saved.");
+            $("#confirmModal").modal('show');
+        };
+
+        function hideConfirmModal() {
+            $("#btnSave").attr("disabled", false);
+            $("#confirmModal").modal('hide');
+        };
+    </script> 
+
+    {% endblock %}

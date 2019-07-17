@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <title>JSPrintManager - Print RAW Commands & Known File Formats from Javascript</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <meta charset="utf-8" />
+    <style>
+      table,
+      textarea {
+        width: 100%;
+        height: 200px;
+        padding: 3px;
+      }
+
+      a {
+        cursor: pointer;
+      }
+
+      .githubIcon {
+        margin-right: 10px;
+        color: #fff;
+        font-size: 32px;
+      }
+
+      .jspmStatus {
+        color: #fff;
+        margin-left: 10px;
+      }
+
+      .round {
+        display: inline-block;
+        height: 40px;
+        width: 40px;
+        line-height: 40px;
+        -moz-border-radius: 20px;
+        border-radius: 20px;
+        background-color: #cd2122;
+        color: #fff;
+        text-align: center;
+      }
+
+      .content {
+        padding-top: 80px;
+        padding-bottom: 20px;
+      }
+
+      .fileFormats {
+        background-color: #ececec;
+        font-weight: bold;
+        color: #666;
+      }
+
+      .topMost {
+        z-index: 1080;
+      }
+
+      .white {
+        color: #fff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <file-formats-modal id="files-requeriments"></file-formats-modal>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.5/bluebird.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <!--JSPrintManager scripts-->
+    <script src="scripts/JSPrintManager.js"></script>
+    <script src="scripts/zip.js"></script>
+    <script src="scripts/zip-ext.js"></script>
+    <script src="scripts/deflate.js"></script>
+    <!--end JSPrintManager scripts-->
+
+      <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+      <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+      <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+
+<div style="text-align:center">
+    <h1 id="lbBarcode" >Print Zebra ZPL commands from Javascript</h1>
+    <hr />
+    <div id="installedPrinters">
+        <label for="installedPrinterName">Select an installed Printer:</label>
+        <select name="installedPrinterName" id="installedPrinterName"></select>
+    </div>
+    <br /><br />
+    <button onclick="print('12345678');">Print Now...</button>
+</div>
+
+<script>
+	$(document).ready(function(){
+		$('#lbBarcode').html('Print Barcode ' + '12345678' + ' To Zebra Printer' );
+	});
+
+    //WebSocket settings
+    JSPM.JSPrintManager.auto_reconnect = true;
+    JSPM.JSPrintManager.start();
+    JSPM.JSPrintManager.WS.onStatusChanged = function () {
+        if (jspmWSStatus()) {
+            //get client installed printers
+            JSPM.JSPrintManager.getPrinters().then(function (myPrinters) {
+                var options = '';
+                for (var i = 0; i < myPrinters.length; i++) {
+                    options += '<option>' + myPrinters[i] + '</option>';
+                }
+                $('#installedPrinterName').html(options);
+            });
+        }
+    };
+ 
+    //Check JSPM WebSocket status
+    function jspmWSStatus() {
+        if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Open)
+            return true;
+        else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Closed) {
+            alert('JSPrintManager (JSPM) is not installed or not running! Download JSPM Client App from https://neodynamic.com/downloads/jspm');
+            return false;
+        }
+        else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.BlackListed) {
+            alert('JSPM has blacklisted this website!');
+            return false;
+        }
+    }
+ 
+    //Do printing...
+    function print(barcode) {
+        if (jspmWSStatus()) {
+            //Create a ClientPrintJob
+            var cpj = new JSPM.ClientPrintJob();
+            //Set Printer type (Refer to the help, there many of them!)
+            if ($('#useDefaultPrinter').prop('checked')) {
+                cpj.clientPrinter = new JSPM.DefaultPrinter();
+            } else {
+                cpj.clientPrinter = new JSPM.InstalledPrinter($('#installedPrinterName').val());
+            }
+            //Set content to print...
+            //Create Zebra ZPL commands for sample label
+            var cmds =  "^XA";
+            cmds += "^FO30,40^ADN,36,20^FDJESCO EVC Plus:^FS";
+            cmds += "^FO500,40^ADN,25,16^FD";
+            cmds += barcode;
+            cmds += "^FS";
+            cmds += "^FO100,100^BY3^B1N,N,150,Y,N^FD";
+            cmds += barcode;
+            cmds += "^FS";
+            cmds += "^XZ";
+            cpj.printerCommands = cmds;
+            //Send print job to printer!
+            cpj.sendToClient();
+        }
+    }
+	</script>
+
+  </body>
+</html>

@@ -1,0 +1,410 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    {% set showDistrictType = 0 %}
+    <section style="margin-bottom: 30px;margin-top: 30px;">
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Aclonica, sans-serif;margin-bottom: 30px;">Welcome {{session['username']}}({{session['accessType']}})</h2>
+        <div class="row">
+            <div style="padding: 5px;">
+                <section style="margin: 0px;margin-bottom: 15px; text-align: center; position: relative;">
+                    <div class="loader" id="loader_district" style="display: inline-block; position: absolute; top: 180px;"></div>
+                    <div style="width: 120px; margin-right: 20px; display: inline-block; float: right;">
+                        {{ form.months(class="form-control", **{"onchange":"onBtnMonth_DistrictChart()"}) }}
+                    </div>
+                    <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif; margin-top: 10px;margin-left: 20px;text-align: left;">Total per district</h2>
+                    <!-- bar chart canvas element -->
+                    <canvas id="districtChart" style="width: 100%; height: 300px"></canvas>
+                    <div style="text-align: right">
+                        <button class="btn btn-primary" id="btnShowUsage" onclick="showDistrictChart(0);">Used Kw</button>
+                        <button class="btn btn-default" id="btnShowCustomerNum" onclick="showDistrictChart(1);">Customers</button>
+                    </div>
+                </section>
+            </div>
+            <div style="padding: 5px;">
+                <section style="margin: 0px;margin-bottom: 15px; text-align: center; position: relative;">
+                    <div class="loader" id="loader_usage" style="display: inline-block; position: absolute; top: 180px;"></div>
+                    <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;margin-left: 20px;text-align: left;">Total per month</h2>
+                    <!-- bar chart canvas element -->
+                    <canvas id="usageChart" style="width: 100%; height: 300px"></canvas>
+                    <div style="text-align: right">
+                        <button class="btn btn-primary" id="btnMonthUsed" onclick="showMonthChart(0);">Used Kw</button>
+                        <button class="btn btn-default" id="btnMonthCustomers" onclick="showMonthChart(1);">Customers</button>
+                    </div>
+                </section>
+            </div>
+            <div class="col-md-6" style="padding: 5px;">
+                <section style="margin: 0px;margin-bottom: 30px;">
+                    <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;margin-left: 20px;text-align: left;">Recent Customers</h3>
+                    <div style="text-align: right;">
+                        <a class="btn btn-info btn-sm" role="button" href="/customer" style="margin-right: 20px;">View All</a>
+                    </div>
+                    <ul class="list-group">
+                        {% for customer in customers %}
+                        <li class="list-group-item" style="font-size: 12px;">
+                            <div class="row">
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Customer Name : &nbsp;</span>
+                                    <span>{{customer.Name}}&nbsp;</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Created Date : &nbsp;</span>
+                                    <span>{{customer.createdDate}}</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Meter No : &nbsp;</span>
+                                    <span>{{customer.MeterBarcodeNo}}</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Mobile Number : &nbsp;</span>
+                                    <span>{{customer.Phone}}</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Supply No : &nbsp;</span>
+                                    <span>{{customer.SupplyNo}}</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Customer Type : &nbsp;</span>
+                                    <span>{{customer.CustomerType}}</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Comment : &nbsp;</span>
+                                    <span>{{customer.Comment}}</span>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </div>
+            <div class="col-md-6" style="padding: 5px;">
+                <section style="margin: 0px;margin-bottom: 30px;">
+                    <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;text-align: left;margin-left: 20px;">Recent Reads</h3>
+                    <div style="text-align: right;">
+                        <a class="btn btn-info btn-sm" role="button" href="/customer" style="margin-right: 20px;">View All</a>
+                    </div>
+                    <ul class="list-group" id="recentReads">
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+
+    <script>
+        // get chart canvas
+        var customer_ctx = document.getElementById("districtChart").getContext("2d");
+        var usage_ctx = document.getElementById("usageChart").getContext("2d");
+
+        Chart.defaults.global.responsive = true;
+        var labelTxt, values;
+    
+        var districtChart, monthChart;
+        var drawRecentReadList = function (reads) {
+
+            var ul = document.getElementById("recentReads");
+            
+            var i;
+            for ( i = 0; i < reads.length; i++ ) {
+                var image;
+                if( reads[i].Image == undefined || reads[i].Image == null  ) {
+                    image = "{{ url_for('static', filename='image/no_image.png') }}"
+                } else {
+                    image = "data:;base64," + reads[i].Image;
+                }
+                var html = `
+                <li class="list-group-item" style="font-size: 12px;">
+                    <div class="row">
+                        <div class="col-sm-6 col-xs-12" style="padding-right: 15px;">
+                            <div class="row">
+                                <div style="text-align: center;">
+                                    <img src="` + image + `" style="width: 100%;height: 160px;object-fit: contain;margin-bottom: 20px;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xs-12" style="font-size: 12px;">
+                            <div class="row">
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Reader : &nbsp;</span>
+                                    <span>` + reads[i].CreatedByUser + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Barcode No : &nbsp;</span>
+                                    <span>` + reads[i].MeterBarcodeNo + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Customer Name : &nbsp;</span>
+                                    <span>` + reads[i].Name + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Supply No : &nbsp;</span>
+                                    <span>` + reads[i].SupplyNo + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Previous Read : &nbsp;</span>
+                                    <span>` + reads[i].PrevRead + `Kw</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Current Read : &nbsp;</span>
+                                    <span>` + reads[i].CurrRead + `Kw</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">UsedKw : &nbsp;</span>
+                                    <span>` + reads[i].UsedKW + `Kw</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Unit Rate : &nbsp;</span>
+                                    <span>` + reads[i].UnitRate + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Discounted : &nbsp;</span>
+                                    <span>` + reads[i].Discounted + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Bill :&nbsp;</span>
+                                    <span>$` + reads[i].Bill + `</span>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-weight: 600;">Read Date :&nbsp;</span>
+                                    <span>` + reads[i].CurrReadDate + `</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>`
+                
+                $("#recentReads").append(html);
+            }
+        }
+
+        var districtNames =[], totalPerDistrict = [], UsagesPerMonth;
+        $(document).ready(function () {
+            $("#loader_district").css('display', 'inline-block');
+            $("#loader_usage").css('display', 'inline-block');
+
+            $("#months").attr('disabled', 'disabled');
+            $("#months").empty();
+
+            $.getJSON("/home/datas", function(data) {
+                $("#loader_district").css('display', 'none');
+                $("#loader_usage").css('display', 'none');
+                months = data.months;
+
+                for( i = 0; i < months.length; i++ ) {
+                    $("#months").append(
+                        $('<option>', {
+                            value: i,
+                            text: months[i]
+                        })
+                    );
+                }
+                $("#months").removeAttr('disabled');
+
+                totalPerDistrictList = data.totalPerDistrictList;
+                UsagesPerMonth = data.UsagesPerMonth;
+
+                getDistrictNames();
+                createChart();
+            });
+/*            
+            $.ajax({
+                url: "/home/datas",
+                method: "GET",
+                dataType: 'json',
+                success: function(data) {
+                    $("#loader_district").css('display', 'none');
+                    $("#loader_usage").css('display', 'none');
+
+                    districtNames = data.districtNames;
+                    customerCnts = data.customerCnts;
+                    Usages = data.Usages;
+                    UsagesPerMonth = data.UsagesPerMonth
+                    createChart();
+                }
+            });
+*/            
+            $.ajax({
+                url: "/home/reads",
+                method: "GET",
+                dataType: 'json',
+                success: function(data) {
+                    drawRecentReadList(data.recentReads);
+                }
+            });
+        });
+
+        var months = [], usedPerMonth = [], meterCntPerMonth = [], customersPerMonth = [], newCustomersPerMonth = [], i;
+
+        function getDistrictNames() {
+            districtNames = [];
+            for( i = 0; i < totalPerDistrictList.length; i++ )  {
+                districtNames.push(totalPerDistrictList[i].district);
+            }
+        }
+
+        function getDistrcitUsedValue() {
+            var values = []
+            id = $("#months").val();
+            for( i = 0; i < totalPerDistrictList.length; i++ ) {
+                values.push(totalPerDistrictList[i].totalPerMonth[id].UsedKw);
+            }
+            return values;
+        }
+
+        function getDistrictCustomersValue() {
+            var values = []
+            id = $("#months").val();
+            for( i = 0; i < totalPerDistrictList.length; i++ ) {
+                values.push(totalPerDistrictList[i].totalPerMonth[id].Customers);
+            }
+            return values;
+        }
+
+        function createChart() {
+            // -------------------------------------
+            labelTxt = 'used';
+            values = getDistrcitUsedValue();
+
+            var chartData = {
+                labels : districtNames,
+                datasets : [getGraphDataSet(labelTxt, "rgba(75,192,192,1)", "rgba(75,192,192,0.4)", values)]
+            }
+            
+            // create the chart using the chart canvas
+            districtChart = new Chart(customer_ctx, {
+                type: 'bar',
+                data: chartData,
+            });
+            ///////////////////////////////////////////////////////////
+
+            months = []
+            for( i = 0; i < UsagesPerMonth.length; i++ ) {
+                months.push(UsagesPerMonth[i].BillingMonth);
+                usedPerMonth.push(UsagesPerMonth[i].Used);
+                newCustomersPerMonth.push(UsagesPerMonth[i].MonthlyNewUsers);
+                meterCntPerMonth.push(UsagesPerMonth[i].NoOfMetersRead);
+                customersPerMonth.push(UsagesPerMonth[i].Customers);
+            }
+            
+            var usageChartData = {
+                labels : months,
+                datasets : [getGraphDataSet("usage", "rgba(192,120,175,1)", "rgba(192,120,175,0.4)", usedPerMonth)]
+            }
+                    
+            monthChart = new Chart(usage_ctx, {
+                type: 'line',
+                data: usageChartData,
+            });
+        }
+
+        var showDistrictType = 0;
+        function showDistrictGrap() {
+            var id = $("#months").val();
+            if (showDistrictType == 0) {
+                labelTxt = 'used';
+                values = getDistrcitUsedValue();
+            } else {
+                labelTxt = 'customers';
+                values = getDistrictCustomersValue();
+            }
+
+            districtChart.data.datasets[0].label = labelTxt;
+            districtChart.data.datasets[0].data = values;
+            districtChart.update();
+        } 
+        // define the chart data
+
+        function showDistrictChart(type) {
+            if ( type == 1 ) {
+                showDistrictType = 1;
+                try {
+                    $('#btnShowCustomerNum').removeClass('btn-default').addClass('btn-primary');
+                    $('#btnShowUsage').removeClass('btn-primary').addClass('btn-default');
+                } catch (e) {
+                    console.log(e);
+                }
+            } else {
+                showDistrictType = 0;
+                try {
+                    $('#btnShowUsage').removeClass('btn-default').addClass('btn-primary');
+                    $('#btnShowCustomerNum').removeClass('btn-primary').addClass('btn-default');
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            showDistrictGrap();
+        }
+
+        function onBtnMonth_DistrictChart() {
+            showDistrictGrap();
+        }
+
+        var showMonthType = 0;
+        function showMonthGrap() {
+            if (showMonthType == 0) {
+                monthChart.data.datasets = [getGraphDataSet("usage", "rgba(192,120,175,1)", "rgba(192,120,175,0.4)", usedPerMonth)];
+            } else {
+                monthChart.data.datasets = [getGraphDataSet("customers", "rgba(75,192,192,1)", "rgba(75,192,192,0.4)", customersPerMonth),
+                                getGraphDataSet("reads", "rgba(192,192,75,1)", "rgba(192,192,75,0.4)", meterCntPerMonth) ];
+            }
+            monthChart.update();
+        } 
+        // define the chart data
+
+        function showMonthChart(type) {
+            if ( type == 0 ) {
+                showMonthType = 0;
+                try {
+                    $('#btnMonthUsed').removeClass('btn-default').addClass('btn-primary');
+                    $('#btnMonthCustomers').removeClass('btn-primary').addClass('btn-default');
+                } catch (e) {
+                    console.log(e);
+                }
+            } else {
+                showMonthType = 1;
+                try {
+                    $('#btnMonthCustomers').removeClass('btn-default').addClass('btn-primary');
+                    $('#btnMonthUsed').removeClass('btn-primary').addClass('btn-default');
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            showMonthGrap();
+        }
+
+        function getGraphDataSet( label, pointColor, fillColor, datas) {
+            return {
+                    label: label,
+                    fill: true,
+                    lineTension: 0.1,
+                    backgroundColor: fillColor,
+                    borderColor: pointColor,
+                    borderCapStyle: 'butt',
+                    borderDash: [],
+                    borderDashOffset: 0.0,
+                    borderJoinStyle: 'miter',
+                    pointBorderColor: pointColor,
+                    pointBackgroundColor: "#fff",
+                    pointBorderWidth: 1,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: pointColor,
+                    pointHoverBorderColor: "rgba(220,220,220,1)",
+                    pointHoverBorderWidth: 2,
+                    pointRadius: 1,
+                    pointHitRadius: 100,
+                    data : datas,
+                    spanGaps: false
+                };
+        }
+
+    </script>
+
+{% endblock %}
+
+
+
+
+
+

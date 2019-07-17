@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section" style="background: aliceblue;">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group border-bottom mb-4" style="margin-top: 20px">
+                <div class="dropdown">
+                    <button class="btn btn-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false" type="button" style="color: cadetblue; font-size: 22px; font-weight:600">Profile <span class="caret"></span></button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li role="presentation"><a onclick="display_form('profile');">Edit Profile</a></li>
+                        <li role="presentation"><a onclick="display_form('password');">Change Password</a></li>
+                    </ul>
+                </div>
+
+<!--
+                <legend class="border-bottom mb-4">Profile</legend>
+-->
+                <div class="form-group" id="div_username" style="margin-top: 20px;">
+                    {{ form.username_profile.label(class="form-control-label") }}
+                    {% if form.username_profile.errors %}
+                        {{ form.username_profile(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.username_profile.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.username_profile(class="form-control form-control-lg", readonly=true) }}
+                    {% endif %}
+                </div>
+                <div class="form-group" id="div_phone" style="margin-top: 20px;">
+                    {{ form.phone_profile.label(class="form-control-label") }}
+                    {% if form.phone_profile.errors %}
+                        {{ form.phone_profile(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.phone_profile.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.phone_profile(class="form-control form-control-lg") }}
+                    {% endif %}          
+                </div>
+                <div class="form-group" id="div_password" style="margin-top: 20px;">
+                    {{ form.password_profile.label(class="form-control-label") }}
+                    {% if form.password_profile.errors %}
+                        {{ form.password_profile(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.password_profile.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.password_profile(class="form-control form-control-lg") }}
+                    {% endif %}                      
+                </div>
+                <div class="form-group" id="div_confirm_password" style="margin-top: 20px;">
+                    {{ form.confirm_password_profile.label(class="form-control-label") }}
+                    {% if form.confirm_password_profile.errors %}
+                        {{ form.confirm_password_profile(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.confirm_password_profile.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.confirm_password_profile(class="form-control form-control-lg") }}   
+                    {% endif %}                    
+                </div>
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-lg btn-primary btn-block" type="button" onclick="onBtnSave()" style="margin-bottom:20px">Save</button>
+                <button class="btn btn-lg btn-default btn-block" type="button" onclick="window.history.back();" style="margin-bottom:20px">Cancel</button>
+        </div>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    
+    <script>
+        var update_type = "profile";
+        $(document).ready( function() {
+            update_type = "profile";
+            display_form("profile");
+        })
+
+        function display_form(type) {
+            $("#div_username").css('display', 'none');
+            $("#div_phone").css('display', 'none');
+            $("#div_password").css('display', 'none');
+            $("#div_confirm_password").css('display', 'none');
+
+            update_type = type;
+            if( update_type == "profile" ) {
+                $("#div_username").css('display', 'block');
+                $("#div_phone").css('display', 'block');
+            } else {
+                $("#div_password").css('display', 'block');
+                $("#div_confirm_password").css('display', 'block');
+            }
+        }
+
+        function onBtnSave() {
+            if( update_type == "password" ) {
+                if( $("#password_profile").val() == "" || $("#confirm_password_profile").val() != $("#password_profile").val() ) {
+                    alert('invalidate password or confirm password.')
+                    return;
+                }
+            }
+            var data = {
+                "update_type": update_type,
+                "username": $("#username_profile").val(),
+                "phone": $("#phone_profile").val(),
+                "password": $("#password_profile").val(),
+                "confirm_password": $("#confirm_password_profile").val()
+            }
+            $.ajax({
+                url: "/profile/update",
+                method: "POST",
+                dataType: 'json',
+                data: data,
+                success: function(data) {
+                    if( data.result == "success" ) {
+                        alert('Account updated for ' + $("#username_profile").val() + '!');
+                        window.history.back();
+                    } else {
+                        alert('Account not updated for ' + $("#username_profile").val() + '!');
+                    }
+                }
+            });
+        }
+    </script>
+{% endblock %}

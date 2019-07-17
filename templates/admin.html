@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme, sans-serif;margin-bottom: 10px;">Admin Page</h2>
+    <div style="margin: 5px;">
+        <div class="row">
+            <div class="col-md-6" style="padding: 0px;">
+                <section style="border-radius: 0px;background: #0e67a2;color: #EEE;margin: 0px; padding: 20px;">
+                    <div style="margin-bottom: 15px">
+                        <span>All Users : &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                        <span>{{users|length}}</span>
+                    </div>
+                    <div style="margin-bottom: 15px">
+                        <span>All Districts : &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                        <span>{{districts|length}}</span>
+                    </div>
+                    <div>
+                        <span>All Customers : &nbsp; &nbsp; &nbsp;</span>
+                        <span>???</span>
+                    </div>
+                </section>
+            </div>
+            <div class="col-md-6" style="padding: 0px;">
+                <section style="border-radius: 0px;background: #0e67a2;color: #EEE;margin: 0px; padding: 20px;">
+                    <div style="margin-bottom: 15px">
+                        <span>All Used Kw : &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>
+                        <span>??? Kw</span>
+                    </div>
+                    <div style="margin-bottom: 15px">
+                        <span>All Bills : &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>
+                        <span>$ ???</span>
+                    </div>
+                    <div>
+                        <span>All Paids : &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                        <span>$ ???</span>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6" style="padding: 5px;">
+            <section style="margin: 0px;margin-bottom: 30px;">
+                <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;text-align: left;margin-left: 20px;">All Users</h3>
+                <div style="text-align: right;">
+                    <button class="btn btn-info btn-xs" type="button" style="margin-right: 20px;">+Add</button>
+                </div>
+                <div class="table-responsive" style="font-size: 14px;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Name</th>
+                                <th>Mobile Number</th>
+                                <th>AcessType</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td>{{loop.index}}</td>
+                                    <td>{{user.username}}</td>
+                                    <td>{{user.Phone}}</td>
+                                    <td>{{user.UserAccessType}}</td>
+                                    <td>
+                                        <button class="btn btn-success btn-xs" type="button">
+                                            <i class="glyphicon glyphicon-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-xs" type="button">
+                                            <i class="glyphicon glyphicon-erase"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+        <div class="col-md-6" style="padding: 5px;">
+            <section style="margin: 0px;margin-bottom: 30px;">
+                <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;text-align: left;margin-left: 20px;">All Districts</h3>
+                <div style="text-align: right;">
+                    <button class="btn btn-info btn-xs" type="button" style="margin-right: 20px;">+Add</button>
+                </div>
+                <div class="table-responsive" style="font-size: 14px;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>District Code</th>
+                                <th>District Name</th>
+                                <th>Biller</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for district in districts %}
+                                <tr>
+                                    <td>{{loop.index}}</td>
+                                    <td>{{district.DistrictCode}}</td>
+                                    <td>{{district.DistrictName}}</td>
+                                    <td>{{district.BillerResponsible}}</td>
+                                    <td>
+                                        <button class="btn btn-success btn-xs" type="button">
+                                            <i class="glyphicon glyphicon-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-xs" type="button">
+                                            <i class="glyphicon glyphicon-erase"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+{% endblock %}

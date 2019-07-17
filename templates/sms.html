@@ -1,0 +1,180 @@
+{% extends "layout.html" %} {% block content %}
+<h2 class="text-center" style="color: rgb(47,89,37);;font-weight: 600;font-family: Acme, sans-serif;margin-bottom: 30px;">Received and Sent</h2>
+<div class="row">
+    <div class="col-md-12">
+        <div>
+            <ul class="nav nav-tabs" style="text-align: center">
+                <li class="active" style="float: none; display: inline-block;"><a href="#tab-1" role="tab" data-toggle="tab">Received</a></li>
+                <li style="float: none; display: inline-block;"><a href="#tab-2" role="tab" data-toggle="tab">Sent</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" role="tabpanel" id="tab-1">
+                    <section style="margin: 0px;margin-bottom: 30px;">
+                        <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;margin-left: 20px;">EVC Money Received&nbsp;</h3>
+                        <div class="table-responsive" style="font-size: 14px;">
+                            <table class="table table-bordered" id="sms_received">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>SmsId</th>
+                                        <th>FromNumber</th>
+                                        <th>SmsMessage</th>
+                                        <th>DateTime</th>
+                                        <th>Amount</th>
+                                        <th>Phone</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <td class="text-right" colspan="5">Total : </td>
+                                        <td class="text-left text-primary" colspan="2">Summary 2</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-2">
+                    <section style="margin: 0px;margin-bottom: 30px;">
+                        <select class="btn-outline" id="sent_type" onchange="showSentTable();" style="float: right; height: 35px;">
+                                <option value="1">Direction Sent</option>
+                                <option value="2">Bank Sent</option>
+                            </select>
+                        <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 300;font-family: Acme, sans-serif;margin-top: 10px;margin-left: 20px;">EVC Money Sent</h3>
+                        <div class="table-responsive" id="sent_table" style="font-size: 14px;">
+                            <table class="table table-bordered" id="sms_sent">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>SmsId</th>
+                                        <th>FromNumber</th>
+                                        <th>SmsMessage</th>
+                                        <th>DateTime</th>
+                                        <th>Amount</th>
+                                        <th>Phone</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <td class="text-right" colspan="5">Total : </td>
+                                        <td class="text-left text-primary" colspan="2">Summary 2</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="table-responsive" id="bank_table" style="font-size: 14px">
+                            <table class="table table-bordered" id="sms_bank">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>SmsId</th>
+                                        <th>FromNumber</th>
+                                        <th>SmsMessage</th>
+                                        <th>DateTime</th>
+                                        <th>Amount</th>
+                                        <th>Phone</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <td class="text-right" colspan="5">Total : </td>
+                                        <td class="text-left text-primary" colspan="2">Summary 2</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+<script>
+    function showTable(tableid, type) {
+        $('#' + tableid).DataTable({
+            pagingType: "first_last_numbers",
+            ajax: {
+                url: '/sms/' + type,
+                dataSrc: 'smsList'
+            },
+            columns: [{
+                data: 'No'
+            }, {
+                data: 'SmsId'
+            }, {
+                data: 'SentFromNumber'
+            }, {
+                data: 'SmsMessage'
+            }, {
+                data: 'SentDateTime'
+            }, {
+                data: 'Amount'
+            }, {
+                data: 'Phone'
+            }],
+            "footerCallback": function(row, data, start, end, display) {
+                var api = this.api(),
+                    data;
+
+                // Remove the formatting to get integer data for summation
+                var intVal = function(i) {
+                    return typeof i === 'string' ?
+                        i.replace(/[\$,]/g, '') * 1 :
+                        typeof i === 'number' ?
+                        i : 0;
+                };
+
+                // Total over all pages
+                total = api
+                    .column(5)
+                    .data()
+                    .reduce(function(a, b) {
+                        return parseFloat(intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+
+                // Total over this page
+                pageTotal = api
+                    .column(5, {
+                        page: 'current'
+                    })
+                    .data()
+                    .reduce(function(a, b) {
+                        return parseFloat(intVal(a) + intVal(b)).toFixed(2);
+                    }, 0);
+
+                // Update footer
+                $(api.column(5).footer()).html(
+                    '$' + pageTotal + ' ( $' + total + ' total)'
+                );
+            }
+        });
+
+        $('.dataTables_length').addClass('bs-select');
+    }
+
+    function showSentTable() {
+        if ($('#sent_type').val() == "1") {
+            $('#sent_table').show();
+            $('#bank_table').hide();
+        } else {
+            $('#sent_table').hide();
+            $('#bank_table').show();
+        }
+    }
+
+    $(document).ready(function() {
+        showTable("sms_received", "Received");
+        showTable("sms_sent", "Sent");
+        showTable("sms_bank", "TransferFromBank");
+        showSentTable();
+    });
+</script>
+
+{% endblock %}

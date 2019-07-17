@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <!--
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    -->
+    <section style="margin-bottom: 30px;margin-top: 30px;">
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme, sans-serif;">
+            Customers</h2>
+        <div style = "text-align: right; padding: 10px">
+            <!-- <div style="width: 120px; float: left; display: inline-block; margin-left: 20px;">
+                {{ form.district(class="form-control", **{"onchange":"showCustomerTable()"}) }}
+            </div> -->
+            <button class="btn btn-success text-right" type="button" onclick="gotoAddPage()" style="margin-right: 20px;">+Add</button>
+        </div>
+        <div class="table-responsive" style="padding: 10px; font-size: 12px;">
+            <table class="table table-striped table-bordered table-sm" id="customers">
+                <thead>
+                    <tr>
+                        <!-- <th scope="col">No</th> -->
+                        <th scope="col">Customer Id</th>
+                        <th scope="col">Supply No</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Meter Barcode No</th>
+                        <th scope="col">Meter Serial No</th>
+                        <th scope="col">Tag Serial No</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </section>
+
+    <form style="display:none" action="/customer/view" id="form_submit_view" method="post">
+        <input id="barcode1" type="text" name="barcode">
+        <input type="submit" />
+    </form>
+    <form style="display:none" action="/customer/edit" id="form_submit_edit" method="post">
+        <input id="barcode2" type="text" name="barcode">
+        <input type="submit" />
+    </form>
+    <form style="display:none" action="/customer/add" id="form_submit_add" method="post">
+        <input id="pageInfo" type="text" name="pageInfo">
+        <input type="submit" />
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        var SearchParameters = {"SearchTerm":"", "Page":2, "Draw":10};
+        var customerTable;
+        var no = 0;
+        $(document).ready(function () {
+            var searchVal, page, length;
+            {% if pageInfo == "0" %}
+                searchVal = "";
+                page = 0;
+                length = 10;
+            {% else %}
+               // $("#district").val("{{ pageInfo.district }}");
+                page = {{ pageInfo.tableInfo.page }};
+                length = {{ pageInfo.tableInfo.length }};
+                searchVal = "{{ pageInfo.searchVal }}";
+            {% endif %}
+
+            no = 1;
+            customerTable = $('#customers').DataTable( {
+                pagingType : "first_last_numbers",
+                ordering : false,
+                processing : true,
+                deferRender: true,
+                pageLength : length,
+                search: {
+                    search: searchVal
+                },
+                displayStart: page*length,
+                ajax: {
+                    url :'/customer_table',
+                },
+                columns: [
+                    { data: 'CI' },
+                    { data: 'SN' },
+                    { data: 'Nm' },
+                    { data: 'P' },
+                    { data: 'B' },
+                    { data: 'MS' },
+                    { data: 'TS' },
+                    { "data":"B", 
+                        "render": function(data){
+                            return ' <td>  <div class="dropdown"> <button class="btn btn-secondary btn-sm dropdown-toggle" id="' + data + '" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Action </button> <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="' + data + '"> <li><a class="dropdown-item" onclick="form_submit_edit(' + data + ')" href="javascript:void(0)">Edit</a></li> <li><a class="dropdown-item" onclick="form_submit_view(' + data + ')" href="javascript:void(0)">View</a></li> </ul> </div> </td> ';
+                        }
+                    }
+                ]
+			});
+			$('.dataTables_length').addClass('bs-select');
+            
+            $('#customers').on('draw.dt', function() {
+                // table redraw event
+                $(".dropdown-toggle").dropdown();
+            });
+        });
+
+        function showCustomerTable() {
+            customerTable.ajax.reload();
+            customerTable.draw();
+		}
+    </script> 
+
+    <script>
+        function form_submit_view(barcode) {
+            url = "/customer/view/" + barcode
+            window.location.href = url
+            //$('#barcode1').val(barcode);
+            //$('#form_submit_view').submit();
+        }
+        function form_submit_edit(barcode) {
+            if ("{{ session['enableWrite'] }}" != "True") {
+                alert( "You can not use this function.")
+                return;
+            }
+            $('#barcode2').val(barcode);
+            $('#form_submit_edit').submit();
+        }
+
+        function gotoAddPage() {
+            var pageInfo ={ "district": "",                                  //$("#district").val(), 
+                                    "tableInfo" : customerTable.page.info(), 
+                                    "searchVal": $('.dataTables_filter input').val() };
+
+            $("#pageInfo").val(JSON.stringify(pageInfo));
+            $('#form_submit_add').submit();
+        }
+    </script>
+
+{% endblock %}

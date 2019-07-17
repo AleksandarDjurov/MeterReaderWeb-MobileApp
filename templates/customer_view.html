@@ -1,0 +1,483 @@
+{% extends "layout.html" %} {% block content %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Aclonica">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Acme">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+
+<!--   
+    Appended By Kolya
+-->
+
+<file-formats-modal id="files-requeriments"></file-formats-modal>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.5/bluebird.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+<script src="{{ url_for('static', filename='scripts/JSPrintManager.js') }} "></script>
+<script src="{{ url_for('static', filename='scripts/zip.js') }} "></script>
+<script src="{{ url_for('static', filename='scripts/zip-ext.js') }} "></script>
+<script src="{{ url_for('static', filename='scripts/deflate.js') }} "></script>
+
+<!--JSPrintManager scripts
+    <script src="scripts/JSPrintManager.js"></script>
+    <script src="scripts/zip.js"></script>
+    <script src="scripts/zip-ext.js"></script>
+    <script src="scripts/deflate.js"></script>
+    end JSPrintManager scripts-->
+
+<script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+
+<div class="coustmoers-container" style="max-height: 80vh">
+    <style>
+        .label {
+            color: #555;
+            font-size: 12px;
+        }
+        .form-group {
+            margin-bottom: 5px;
+        }
+        .col-lg-12, .col-lg-3, .col-lg-4, .col-lg-6, .col-lg-8, .col-lg-9, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {
+            padding: 0px;
+        }
+    </style>
+
+    <section style="margin-bottom: 30px;margin-top: 30px;">
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: sans-serif;">{{customerInfo.SupplyNo}} -- {{customerInfo.Name}} -- {{customerInfo.MeterBarcodeno}}</h2>
+        <div class="row" style="text-align: center; font-size:12px">
+            <div style="text-align: center; float: right; display:inline-block">
+                <span class="label">Account Created On</span>
+                <span>{{customerInfo.Account_Created_on}}</span>
+            </div>
+            <div style="width: 200px; text-align: center; display: inline-block; background: aquamarine; padding: 5px;">
+                <span class="label">Balance:</span>
+                <span>${{customerInfo.Balance}}</span>
+            </div>
+        </div>
+        <div class="row" style="font-size:12px; margin-top: 10px">
+            <div class="img-row">
+                <div id="img-wrap" class="col-xs-12">
+                    {% if historys and historys.Image != None %}
+                        <img src="data:;base64,{{ historys.Image }}" id="code-img"> 
+                    {% else %}
+                        <img src="{{ url_for('static', filename='image/no_image.png') }}" id="code-img"> 
+                    {% endif %}
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Customer Type&nbsp;</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.CustomerType}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-8 col-xs-12 form-group">
+                        <div class="col-xs-3 form-group">
+                            <span class="label">City&nbsp;</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.City}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Customer Id&nbsp;</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.CustomerId}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-8 col-xs-12 form-group">
+                        <div class="col-xs-3 form-group">
+                            <span class="label">Neighbour&nbsp;</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.Neighbour}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Houser Tax Id No&nbsp;</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.House_Tax_No}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-8 col-xs-12 form-group">
+                        <div class="col-xs-3 col-xs-6 form-group">
+                            <span class="label">Phone No.&nbsp;</span>
+                        </div>
+                        <div class="col-xs-9 col-xs-6 form-group">
+                            <span>{{customerInfo.Phone_No}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 20px">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Dhameen Name</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.DhameenName}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Dhameen Phone No.</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.Dhameen_Phone_No}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-xs-12form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Meter Make / Model</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.MeterMake_Model}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Connected To Pol No.</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.ConnectedToPoleNo}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Deposit</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.Deposit}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Meter Serial No.</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.MeterSerialNo}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Connected To Phase.</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.ConnectedToPhase}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Tarrif Name / Unit Rate</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.Tarrif_UnitRate}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Tag Serial No.</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.TagSerialNo}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Meter Installed Date</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.MeterInstalledDate}}&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-xs-12 form-group">
+                        <div class="col-xs-6 form-group">
+                            <span class="label">Meter Location</span>
+                        </div>
+                        <div class="col-xs-6 form-group">
+                            <span>{{customerInfo.MeterLocation}}&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 text-right" style="padding-right: 15px;">
+                <button class="btn btn-info" type="button" style="margin-right: 15px;" data-toggle="modal" data-target="#myPrintModal">
+                        <i class="glyphicon glyphicon-print" style="font-size: 20px;"></i>
+                    </button>
+                <button class="btn btn-warning" type="button" onclick="window.location.href='/customer'">
+                        <i class="glyphicon glyphicon-ok" style="font-size: 20px;"></i>
+                    </button>
+            </div>
+
+            <div class="modal fade" id="myPrintModal" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+
+                        <div style="text-align:center">
+                            <h1 id="lbBarcode">Print Zebra ZPL commands from Javascript</h1>
+                            <hr />
+                            <div id="installedPrinters">
+                                <label for="installedPrinterName">Select an installed Printer:</label>
+                                <select name="installedPrinterName" id="installedPrinterName"></select>
+                            </div>
+                            <br /><br />
+                            <button class="btn btn-default" onclick="print('12345678');">Print</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div>
+            <ul class="nav nav-tabs" style="text-align: center">
+                <li class="active" style="float: none; display: inline-block;"><a href="#tab-1" role="tab" data-toggle="tab">Usage History</a></li>
+                <li style="float: none; display: inline-block;"><a href="#tab-2" role="tab" data-toggle="tab">Bills</a></li>
+                <li style="float: none; display: inline-block;"><a href="#tab-3" role="tab" data-toggle="tab">Payments made</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" role="tabpanel" id="tab-1">
+                    <section style="margin-top: 10px;">
+                        <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme;line-height: 0.6;">
+                            Usage History
+                        </h3>
+                        <div class="table-responsive" style="font-size: 14px;">
+                            <table class="table table-bordered" id="usage_table">
+                                <thead>
+                                    <tr>
+                                        <th>Usage Id</th>
+                                        <th>Customer Id</th>
+                                        <th>Prev Read Date</th>
+                                        <th>Prev Read</th>
+                                        <th>Curr Read Date</th>
+                                        <th>Curr Read</th>
+                                        <th>Used Kw</th>
+                                        <th>Unit Rate</th>
+                                        <th>Bill</th>
+                                        <th>Billing Month</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-2">
+                    <section style="margin-top: 10px;">
+                        <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme;line-height: 0.6;">
+                            Bills
+                        </h3>
+                        <div class="table-responsive" style="font-size: 14px;">
+                            <table class="table table-bordered" id="bill_table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer Id</th>
+                                        <th>Prev Read Date</th>
+                                        <th>Prev Read</th>
+                                        <th>Curr Read Date</th>
+                                        <th>Curr Read</th>
+                                        <th>Used Kw</th>
+                                        <th>Unit Rate</th>
+                                        <th>Bill</th>
+                                        <th>Billing Month</th>
+                                        <th>No of Read</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-3">
+                    <section style="margin-top: 10px;">
+                        <h3 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme;line-height: 0.6;">
+                            Payments made
+                        </h3>
+                        <div class="table-responsive" style="font-size: 14px;">
+                            <table class="table table-bordered" id="payment_table">
+                                <thead>
+                                    <tr>
+                                        <th>Supply No</th>
+                                        <th>Customer Id</th>
+                                        <th>Payment Type</th>
+                                        <th>Paid</th>
+                                        <th>Discount</th>
+                                        <th>Outstanding</th>
+                                        <th>Billing Month</th>
+                                        <th>Create User</th>
+                                        <th>Create Date</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!--
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+-->
+
+<!--        <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>-->
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+<script>
+    var barcode;
+    $(document).ready(function() {
+        barcode = "{{customerInfo.MeterBarcodeno}}";
+        $('#usage_table').DataTable({
+            pagingType: "first_last_numbers",
+            ajax: {
+                url: '/customer/view/usage',
+                data: function(data) {
+                    data.barcode = barcode;
+                }
+            },
+            columns: [
+                { data: 'UsageId' },
+                { data: 'CustomerId'},
+                { data: 'PrevReadDate'},
+                { data: 'PrevRead'},
+                { data: 'CurrReadDate'},
+                { data: 'CurrRead'},
+                { data: 'UsedKw'},
+                { data: 'UnitRate'},
+                { data: 'Bill'},
+                { data: 'BillingMonth'}
+            ]
+        });
+
+        $('#bill_table').DataTable({
+            pagingType: "first_last_numbers",
+            ajax: {
+                url: '/customer/view/bill',
+                data: function(data) {
+                    data.barcode = barcode;
+                }
+            },
+            columns: [
+                { data: 'CustomerId'},
+                { data: 'PrevReadDate'},
+                { data: 'PrevRead'},
+                { data: 'CurrReadDate'},
+                { data: 'CurrRead'},
+                { data: 'UsedKw'},
+                { data: 'UnitRate'},
+                { data: 'Bill'},
+                { data: 'BillingMonth'},
+                { data: 'NoOfRead'}
+            ]
+        });
+
+        $('#payment_table').DataTable({
+            pagingType: "first_last_numbers",
+            ajax: {
+                url: '/customer/view/payment',
+                data: function(data) {
+                    data.barcode = barcode;
+                }
+            },
+            columns: [
+                { data: 'SupplyNo' },
+                { data: 'CustomerId'},
+                { data: 'PaymentType'},
+                { data: 'Paid'},
+                { data: 'Discount'},
+                { data: 'Outstanding'},
+                { data: 'BillingMonth'},
+                { data: 'User'},
+                { data: 'CreateDate'}
+            ]
+        });
+        
+        $('.dataTables_length').addClass('bs-select');
+    });
+
+    // Appended By Kolya
+    // WebSocket settings
+    JSPM.JSPrintManager.auto_reconnect = true;
+    JSPM.JSPrintManager.start();
+    JSPM.JSPrintManager.WS.onStatusChanged = function() {
+        if (jspmWSStatus()) {
+            //get client installed printers
+            JSPM.JSPrintManager.getPrinters().then(function(myPrinters) {
+                var options = '';
+                for (var i = 0; i < myPrinters.length; i++) {
+                    options += '<option>' + myPrinters[i] + '</option>';
+                }
+                $('#installedPrinterName').html(options);
+            });
+        }
+    };
+
+    //Check JSPM WebSocket status
+    function jspmWSStatus() {
+        if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Open)
+            return true;
+        else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Closed) {
+            alert('JSPrintManager (JSPM) is not installed or not running! Download JSPM Client App from https://neodynamic.com/downloads/jspm');
+            return false;
+        } else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.BlackListed) {
+            alert('JSPM has blacklisted this website!');
+            return false;
+        }
+    }
+
+    //Do printing...
+    function print(barcode) {
+        barcode = "{{ customerInfo.MeterBarcodeno }}";
+        if (jspmWSStatus()) {
+            //Create a ClientPrintJob
+            var cpj = new JSPM.ClientPrintJob();
+            //Set Printer type (Refer to the help, there many of them!)
+            if ($('#useDefaultPrinter').prop('checked')) {
+                cpj.clientPrinter = new JSPM.DefaultPrinter();
+            } else {
+                cpj.clientPrinter = new JSPM.InstalledPrinter($('#installedPrinterName').val());
+            }
+
+            //Set content to print...
+            //Create Zebra ZPL commands for sample label
+            var cmds = "^XA";
+            cmds += "^FO20,20^A0N,30,37^FDJESCO EVC Plus 612233757^FS";
+            cmds += "^FO50,60^BY3";
+            cmds += "^BCN,140,Y,N,N^FD";
+            cmds += barcode;
+            cmds += "^FS";
+            cmds += "^XZ";
+            cpj.printerCommands = cmds;
+            //Send print job to printer!
+            cpj.sendToClient();
+        }
+    }
+</script>
+{% endblock %}

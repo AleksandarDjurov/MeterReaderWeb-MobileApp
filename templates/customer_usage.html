@@ -1,0 +1,353 @@
+{% extends "layout.html" %}
+{% block content %}
+    <section style="margin-top: 10px;">
+        <div class="row">
+            <div style="text-align: right;">
+                <div style="width: 120px; margin-right: 20px; display: inline-block;">
+                    {{ form.district(class="form-control", **{"onchange":"showUsageTable()"}) }}
+                </div>
+                <div style="width: 120px; margin-right: 20px; display: inline-block;">
+                    {{ form.months(class="form-control", **{"onchange":"showUsageTable()"}) }}
+                </div>
+                <!--
+                <div class="input-group date"  style="width: 170px;float: right;" data-date-format="MMM-YYYY" id="dp">
+                    <input  type="text" data-date-format="MMM-YYYY" class="form-control" placeholder="MMM-YYYY" id="myMonth">
+                    <div class="input-group-addon" >
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div> 
+                -->           
+            </div>
+        </div>
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme;line-height: 0.6;"><br>Manually insert Meter reads KW</h2>
+        <div class="table-responsive" style="font-size: 10px;">
+            <table class="table table-bordered" id="usages">
+                <thead>
+                    <tr>
+                        <th>Supply No</th>
+                        <!--
+                        <th>Customer Id</th>
+                        <th>Meter Id</th>
+                        -->
+                        <th>Barcode No</th>
+                        <th>Name</th>
+                        <th>Prev Date</th>
+                        <th>Prev Read</th>
+                        <th>Curr Read</th>
+                        <th>Unit Rate</th>
+                        <th>Discounted</th>
+                        <th>UsedKw</th>
+                        <th>Bill</th>
+                        <th>User</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div style="text-align: right;padding: 15px;">
+        <div style="text-align: right;padding: 15px;">
+            <div style="text-align:left; display: inline-block; float: left;">
+                <span style="float:left;font-size: 16px;color: rgb(47,89,37); font-family: Acme;">The customers shown in this page are the meters that have not been read for the current Billing Month.</span>
+            </div>
+            <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="window.location.href = '/customer/payment'">Cancel</button>
+            <button class="btn btn-success" type="button" id = "btnSave" style="margin-right: 10px;" onclick="getNewRead()">Save</button>
+        </div>
+        
+        <div class="modal fade" id="confirmModal" role="dialog" style="text-align: center">
+            <div class="modal-dialog"  style="max-width: 400px;">
+                <div class="modal-content" style="padding: 10px;">
+                    <h2 style="text-align: center;font-family: 'Acme';color: rgb(47,89,37);margin-bottom: 20px;">Are you sure?</h2>
+                    <h5 style="text-align: center; margin-bottom: 20px;" id="msg_content">3000 reads will be save.</h5>
+                    <div style="text-align: center; padding: 5px;">
+                        <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="hideConfirmModal()">Cancel</button>
+                        <button class="btn btn-success" type="button" onclick="sendNewRead()">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+    <!--
+    <script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+    <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    -->
+
+    <script>
+        var savedRow = [], newSavedRow = [];
+        var usageTable;
+		var editRow = 0;
+        var intVal = function ( i ) {
+            return typeof i === 'string' ?
+                i.replace(/[\$,]/g, '')*1 :
+                typeof i === 'number' ?
+                    i : 0;
+        };
+
+        function initEditRow(editRow) {
+            if( editRow == 0 || editRow == undefined ) {
+                return;
+            }
+
+            var $input_td_curr = editRow.find("td:nth-child(6)"),
+				$input_td_unit = editRow.find("td:nth-child(7)");
+
+            var curr_read = $('#inp_curr').val(),
+                unit_rate = $('#inp_unit').val();
+            
+            $input_td_curr.html(curr_read);
+            $input_td_unit.html(unit_rate);
+		}
+		
+        /*
+        $('.input-group.date').datetimepicker({
+            viewMode: 'years',
+            format:'MMM-YYYY',
+            ignoreReadonly: true,
+			defaultDate: new Date()
+        }).on('dp.change', function (ev) {
+			showUsageTable();
+		});
+        
+        ajax: {
+                    url:'/customer/usages/' + $('#myMonth').val()+'/' + $("#district option:selected").text(),
+                    dataSrc: 'usagesList'
+                },*/
+
+        $(document).ready(function () {
+            //month = $('#myMonth').val()
+            //strUrl = '/customer/usages/' + $('#myMonth').val()+'/' + $("#district option:selected").text()
+            usageTable = $('#usages').DataTable( {
+                pagingType : "first_last_numbers",
+                ordering : false,
+                ajax : {
+                    url :'/customer/usages',
+                    data : function(data){
+                        // Read values
+                        var district = $("#district").val();
+                        //var month = $("#myMonth").val();
+                        var month = $("#months").val();
+
+                        // Append to data
+                        data.district = district;
+                        data.month = month;
+                    },
+                    dataSrc: function(json) {
+                        var data = json.usagesList;
+                        savedRow = [];
+                        var i;
+                        for( i = 0; i < data.length; i++ ) {
+                            savedRow.push(false);
+                        }
+                        return data;
+                    }
+                },
+                columns: [
+                    { data: 'SupplyNo' },
+                    //{ data: 'CustomerId' },
+                    //{ data: 'MeterId' },
+                    { data: 'MeterBarcodeNo' },
+                    { data: 'Name' },
+                    { data: 'PrevDate' },
+                    { data: 'PrevRead' },
+                    { data: 'CurrRead' },                    
+                    { data: 'UnitRate' },                    
+                    { data: 'ChkDiscounted' },                   
+                    { data: 'UsedKw' },                 
+                    { data: 'Bill' },          
+                    { data: 'User' }
+                ]
+			});
+
+            $('.dataTables_length').addClass('bs-select');
+            
+            $('input[type="search"]').click( function () {
+                initEditRow(editRow);
+                editRow = 0;
+            } );
+
+            $(usageTable.table().body()).on('click', 'tr', function () {
+                if ("{{ session['enableWrite'] }}" != "True")
+                    return;
+
+                //var data = usageTable.row( this ).data();
+                //goto_customer_usage_page(data);
+                var inputs = $(this).find('input');
+				
+				if(inputs.length > 1) return; 
+				
+				if (editRow != 0) {
+					initEditRow(editRow);
+				}
+				editRow = $(this).closest("tr").off("mousedown");
+				var $input_td_curr = editRow.find("td:nth-child(6)"),
+					$input_td_unit = editRow.find("td:nth-child(7)"),
+					$used = editRow.find("td:nth-child(9)"),
+                    $bill = editRow.find("td:nth-child(10)"),
+                    $prev = editRow.find("td:nth-child(5)"),
+                    prev_read = "", curr_read = "", unit_rate = "";
+                var discounted = $("#d" + editRow.find("td:nth-child(2)").text()).is(':checked');
+
+                prev_read = $prev.text();
+				curr_read = $input_td_curr.text();
+				$input_td_curr.html("").append('<input id="inp_curr" class="vinp" type="text" value="'+curr_read+'" style="width:40px; text-align:center">');
+				unit_rate = $input_td_unit.text();
+				$input_td_unit.html("").append('<input id="inp_unit" class="vinp" type="text" value="'+unit_rate+'" style="width:40px; text-align:center">');
+
+				$('#inp_curr').change(function(){
+                    curr_read = $('#inp_curr').val();
+                    
+                    var unit_rate = 1.0;
+                    var used = intVal(curr_read) - intVal(prev_read);
+
+                    if (used >= 200)
+                        unit_rate = 0.7;
+                    else if (used >= 100)
+                        unit_rate = 0.8;
+                    else if (used >= 50)
+                        unit_rate = 0.9;
+
+                    $('#inp_unit').val(unit_rate);
+                    calcUsage();
+				});
+
+				$('#inp_unit').change(function(){
+                    calcUsage();
+				});
+
+                $("#d" + editRow.find("td:nth-child(2)").text()).change( function() {
+                    calcUsage();
+                })
+
+                function calcUsage() {
+                    discounted = $("#d" + editRow.find("td:nth-child(2)").text()).is(':checked');
+                    curr_read = $('#inp_curr').val();
+                    unit_rate = $('#inp_unit').val();
+                    if( curr_read == "" ) {
+                        curr_read = 0;
+                    }
+
+                    var used = intVal(curr_read) - intVal(prev_read);
+
+                    if ( used <= 0 ) {
+                        alert("Curr Read must greater than Prev Read");
+                        return;
+                    }
+
+                    //usageTable.$('td', editRow.index()).css('background-color', 'rgba(75,192,192,0.8)');
+                    indexes = usageTable.rows( {search:'applied'} ).indexes();
+                    pageInfo = usageTable.page.info();
+                    var rowId = indexes[pageInfo.page*pageInfo.length+editRow.index()];
+
+                    //usageTable.$('td', pageInfo.page*pageInfo.length+editRow.index()).addClass("alert-info");
+                    usageTable.$('td', rowId).addClass("alert-info");
+
+                    
+                    bill = used;
+                    if( discounted ) {
+                        bill = (used * intVal(unit_rate)).toFixed(2);
+                    }
+
+                    if( used < 10 ) {
+                        bill = 10.0;
+                    }
+
+					$used.text(used);
+                    $bill.text(bill);
+
+                    usageTable.data(0)[rowId].CurrRead = curr_read;
+                    usageTable.data(0)[rowId].UnitRate = unit_rate;
+                    usageTable.data(0)[rowId].UsedKw = used;
+                    usageTable.data(0)[rowId].Bill = bill;
+                    usageTable.data(0)[rowId].Discounted = discounted;
+                };
+            } );
+/*
+            $(usageTable.table().body()).on( 'click', 'tr', function () {
+                usageTable.table().cells( this, [ 2, 3, 4 ] ).edit( {
+                    blur: 'submit'
+                } );
+            } );
+            */
+        });
+
+		function showUsageTable() {
+            usageTable.ajax.reload();
+            usageTable.draw();
+		}
+
+        function goto_customer_usage_page(data) {
+            $("#customer_name").text(data.Name);
+            $("#supply_no").text(data.SupplyNo);
+            $("#customer_id").text(data.CustomerId);
+            $("#meter_id").text(data.MeterId);
+            $("#barcode").text(data.MeterBarcodeNo);
+            $("#prev_read").text(data.PrevRead);
+            $("#prev_date").text(data.PrevDate);
+            $("#biller").text(data.User);
+            $("#curr_read").text("");
+
+            $("#newReadModal").modal('show');
+        }
+
+        var sendData;
+        function getNewRead() {
+            sendData = new Array();
+            newSavedRow = [];
+            var tableData = usageTable.data(0);
+            var i;
+
+            for( i = 0; i < tableData.length; i++ ) {
+                newSavedRow[i] = false;
+                if( savedRow[i] ) {
+                    newSavedRow[i] = true;
+                } else if( intVal(tableData[i].UsedKw) > 0 ) {
+                    newSavedRow[i] = true;
+                    sendData.push(tableData[i]);
+                }
+            }
+
+            if( sendData.length < 1 ) {
+                return;
+            } else {
+                showConfirmModal();
+            }
+        }
+
+        function sendNewRead() {
+            savedRow = newSavedRow;
+            $("#confirmModal").modal('hide');
+            $.ajax({
+                type: "POST",
+                url: "/customer/manual_usage",
+                // The key needs to match your method's input parameter (case-sensitive).
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data : JSON.stringify({
+                    sendData: sendData
+                }),
+                success: function(data){alert("success");},
+                failure: function(errMsg) {
+                    alert(errMsg);
+                }
+            });
+        }
+
+        function showConfirmModal() {
+            $("#btnSave").attr("disabled", true);
+            
+            $("#msg_content").text( sendData.length + " Rows will be saved.");
+            $("#confirmModal").modal('show');
+        };
+
+        function hideConfirmModal() {
+            $("#btnSave").attr("disabled", false);
+            $("#confirmModal").modal('hide');
+        };
+    </script> 
+
+    {% endblock %}

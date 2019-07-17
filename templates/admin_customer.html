@@ -1,0 +1,262 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <section style="margin-bottom: 30px;margin-top: 30px;">
+        <div style="width: 120px; margin-right: 20px; display: inline-block; float: right;">
+            {{ form.district(class="form-control", **{"onchange":"showCustomerTable()"}) }}
+        </div>
+        <h2 class="text-center" style="color: rgb(47,89,37);font-weight: 600;font-family: Acme, sans-serif;">
+            Manage Customer
+        </h2>
+        <div class="table-responsive" style="font-size: 12px;">
+            <table class="table table-bordered" id="customers">
+                <thead>
+                    <tr>
+                        <th scope="col">CustomerId</th>
+                        <th scope="col">SupplyNo</th>
+                        <th scope="col">Meter Barcode</th>
+                        <th scope="col">Customer Name</th>
+                        <th scope="col">CustomerType</th>
+                        <th scope="col">Account Status</th>
+                        <th scope="col">Meter Status</th>
+                        <th scope="col">Create Date</th>
+                        <th scope="col">District</th>
+                        <th scope="col">Management</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </section>
+
+    <div class="modal fade" id="update_modal" role="dialog" style="text-align: center">
+        <div class="modal-dialog"  style="max-width: 400px;">
+            <div class="modal-content" style="padding: 10px;">
+                <h2 style="text-align: center;font-family: 'Acme';color: rgb(47,89,37);margin-bottom: 20px;">Update Customer's District</h2>
+                <div style="margin-bottom: 10px; margin-top: 10px;">
+                    <span style="font-weight: 600;">Customer Id : &nbsp;</span>
+                    <span id="update_id"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Customer Name : &nbsp;</span>
+                    <span id="update_name"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Supply No : &nbsp;</span>
+                    <span id="update_supplyno"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Meter Barcode No : &nbsp;</span>
+                    <span id="update_barcoe"></span>
+                </div>
+                <div style="margin-bottom: 10px; display:none">
+                    <span id="update_user"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">From District : &nbsp;</span>
+                    <span id="update_from_district"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">To District :  &nbsp;</span>
+                    <div style="width: 150px; display: inline-block;">
+                        {{ form.district_update(class="form-control") }}
+                    </div>
+                </div>
+
+                <div style="text-align: right; padding: 15px; margin-right: 10px;">
+                    <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="hideUpdateModal()">Cancel</button>
+                    <button class="btn btn-success" type="button" onclick="onBtnUpdate()">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reactivate_modal" role="dialog" style="text-align: center">
+        <div class="modal-dialog"  style="max-width: 400px;">
+            <div class="modal-content" style="padding: 10px;">
+                <h2 style="text-align: center;font-family: 'Acme';color: rgb(47,89,37);margin-bottom: 20px;">Are you sure?</h2>
+                <div style="margin-bottom: 10px; margin-top: 10px;">
+                    <span style="font-weight: 600;">Customer Id : &nbsp;</span>
+                    <span id="reactivate_id"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Customer Name : &nbsp;</span>
+                    <span id="reactivate_name"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Supply No : &nbsp;</span>
+                    <span id="reactivate_supplyno"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Meter Barcode No : &nbsp;</span>
+                    <span id="reactivate_barcode"></span>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Customer Active : &nbsp;</span>
+                    <span id="reactivate_customer_active"></span>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: 600;">Meter Active : &nbsp;</span>
+                    <span id="reactivate_meter_active"></span>
+                </div>
+
+                <div style="text-align: right; padding: 15px; margin-right: 10px;">
+                    <button class="btn btn-default" type="button" style="margin-right: 20px;" onclick="hideReactivateModal()">Cancel</button>
+                    <button class="btn btn-success" type="button" onclick="onBtnReactivate()">Reactivate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        var customerTable;
+        var focusRow;
+        var user;
+        $(document).ready(function () {
+            customerTable = $('#customers').DataTable( {
+                pagingType : "first_last_numbers",
+                processing : true,
+                ajax: {
+                    url :'/admin/customer_manage/customer_table',
+                    data : function(data){
+                        data.district = $("#district").val();
+                    },
+                    dataSrc: function (data) {
+                        user = data.user;
+                        return data.data;
+                    }
+                },
+                columns: [
+                    { data: 'CustomerId' },         // 1
+                    { data: 'SupplyNo' },           // 2
+                    { data: 'MeterBarcodeNo' },     // 3
+                    { data: 'Name' },               // 4
+                    { data: 'CustomerType' },       // 5
+                    { data: 'IsAccountActive' },    // 6
+                    { data: 'IsMeterActive' },      // 7
+                    { data: 'CreateDate' },         // 8
+                    { data: 'DistrictCode' },       // 9
+                    { data: 'Mange' }               // 10
+                ]
+			});
+			$('.dataTables_length').addClass('bs-select');
+
+            $(customerTable.table().body()).on('click', 'tr', function () {
+                focusRow = $(this).closest("tr").off("mousedown");
+				var customer_id = focusRow.find("td:nth-child(1)").text(),
+                    district = focusRow.find("td:nth-child(9)").text(),
+                    supply_no = focusRow.find("td:nth-child(2)").text(),
+                    name = focusRow.find("td:nth-child(4)").text(),
+                    meter_active = focusRow.find("td:nth-child(7)").text(),
+                    customer_active = focusRow.find("td:nth-child(6)").text(),
+                    barcode = focusRow.find("td:nth-child(3)").text();
+
+                $("#update_"+customer_id).click( function() {
+                    $("#update_id").text(customer_id);
+                    $("#update_name").text(name);
+                    $("#update_supplyno").text(supply_no);
+                    $("#update_barcoe").text(barcode);
+                    $("#update_from_district").text(district);
+                    $("#update_user").text(user);
+                    $("#district_update").val(district);
+                    showUpdateModal();
+                });
+
+                $("#ra_"+customer_id).click( function() {
+                    $("#reactivate_id").text(customer_id);
+                    $("#reactivate_name").text(name);
+                    $("#reactivate_supplyno").text(supply_no);
+                    $("#reactivate_barcode").text(barcode);
+                    $("#reactivate_customer_active").text(customer_active);
+                    $("#reactivate_meter_active").text(meter_active);
+                    showReactivateModal();
+                });
+            });
+        });
+
+        function onBtnUpdate() {
+            if( $("#district_update").val() == $("#update_from_district").text() ) {
+                alert("Please choose a district to be updated");
+                return;
+            }
+            hideUpdateModal();
+
+            $.ajax({
+                type: "POST",
+                url: "/admin/customer_manage/update_district",
+                // The key needs to match your method's input parameter (case-sensitive).
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data : JSON.stringify({
+                    data : {
+                        "Barcode" : $("#update_barcoe").text(),
+                        "District" : $("#district_update").val(),
+                        "User" : $("#update_user").text()
+                    }
+                }),
+                success: function(data){
+                    focusRow.find("td:nth-child(9)").text(data.district)
+                    alert("success");
+                },
+                failure: function(errMsg) {
+                    alert(errMsg);
+                }
+            });
+        }
+
+        function onBtnReactivate() {
+            hideReactivateModal();
+
+            $.ajax({
+                type: "POST",
+                url: "/admin/customer_manage/reactivate_user",
+                // The key needs to match your method's input parameter (case-sensitive).
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data : JSON.stringify({
+                    data : {
+                        "Barcode" : $("#reactivate_barcode").text(),
+                        "IsAccountActive" : $("#reactivate_customer_active").text(),
+                    }
+                }),
+                success: function(data){
+                    focusRow.find("td:nth-child(6)").text(data.active)
+                    focusRow.find("td:nth-child(7)").text(data.active)
+                    alert("success");
+                },
+                failure: function(errMsg) {
+                    alert(errMsg);
+                }
+            });
+        }
+
+        function showCustomerTable() {
+            customerTable.ajax.reload();
+            customerTable.draw();
+		}
+
+        function showUpdateModal() {
+            $("#update_modal").modal('show');
+        }
+
+        function hideUpdateModal() {
+            $("#update_modal").modal('hide');
+        }
+
+        function showReactivateModal() {
+            $("#reactivate_modal").modal('show');
+        }
+
+        function hideReactivateModal() {
+            $("#reactivate_modal").modal('hide');
+        }
+    </script> 
+
+{% endblock %}
